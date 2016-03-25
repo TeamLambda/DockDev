@@ -80,7 +80,8 @@ html {
 }
 
 #content {
-  width: 100%;
+  width: 80%;
+  margin: 0 auto;
   padding-left: 259px;
   padding-right: 20px;
   /*border: 5px solid #96BAC5;*/
@@ -142,6 +143,40 @@ html {
   text-decoration: none;
 }
 
-li, ul {
+ul, li {
   list-style-type: none;
+}
+
+.container-list {
+  list-style-type: none;
+  display: inline-block;
+  margin: 2em;
+}
+
+.container-box {
+  display: inline-block;
+  border: 1px solid black;
+  padding: 2em;
+  width: 300px;
+  height: 300px;
+}
+
+.text-container {
+  float: left;
+}
+
+.text-version {
+  float: right;
+  color: gray;
+}
+
+.text-description {
+  clear: left;
+}
+
+
+.button-container {
+  margin: 2em;
+  width: 300px;
+  height: 300px;
 }
