@@ -405,6 +405,7 @@ button.btn.btn-sm.btn-primary-outline.container-save {
   overflow: auto;
   padding:25px;
   padding-top: 65px;
+  height:100%;
 }
 
 .proj-nav ul li {
@@ -918,4 +919,12 @@ label.btn.btn-primary.active {
 
 a.list-group-item.active, .notification-content list-item {
     border-radius: 0px;
+}
+
+.sidebar-logo {
+    z-index: 9;
+    position: absolute;
+    bottom: 26px;
+    max-width: 45px;
+    opacity: 0.1;
 }

@@ -27,6 +27,9 @@ class App extends Component {
             </NavLink>
           </li>
           <ProjectLinks projects={projects} />
+          <div className="sidebar-logo">
+            <img src="./client/images/png/dockdevLogo.png" />
+          </div>
         </ul>
         <TopNav params={this.props.params} />
         <div id="right-column">
