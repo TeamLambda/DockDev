@@ -621,10 +621,18 @@ function startingRemoteContainers(remoteObj) {
         remoteObj,
       }
     );
-    const containerArray = remoteObj.containers.map(cont =>
-      docker.containerStart(cont.machine, cont.dockerId));
+    const containerArray = remoteObj.containers.filter(cont => !cont.nginx)
+      .map(cont => docker.containerStart(cont.machine, cont.dockerId));
     Promise.all(containerArray)
       .then(dispatch(startedRemoteContainers({ ...remoteObj, status: 6 })));
+  };
+}
+
+function startProxyServer(remoteObj) {
+  return dispatch => {
+    const proxy = remoteObj.containers.filter(cont => cont.nginx)[0];
+    docker.containerStart(proxy.machine, proxy.dockerId)
+      .then(() => dispatch(startingRemoteContainers(remoteObj)));
   };
 }
 
@@ -640,7 +648,7 @@ function createRemoteContainers(remoteObj) {
     const containerArray = remoteObj.containers.map(cont =>
       deploy.createRemoteContainer(cont, remoteObj));
     Promise.all(containerArray)
-      .then(res => dispatch(startingRemoteContainers({
+      .then(res => dispatch(startProxyServer({
         ...remoteObj,
         containers: [...res],
         status: 5,
