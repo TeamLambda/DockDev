@@ -5,6 +5,7 @@ import { loadConfig, appInitiation } from '../../actions/index';
 import NavLink from '../../components/assets/NavLink';
 import ProjectLinks from '../../components/assets/ProjectLinks';
 import TopNav from './TopNav';
+var ReactTooltip = require("react-tooltip");
 
 class App extends Component {
 
@@ -28,10 +29,13 @@ class App extends Component {
           </li>
           <li className="add-proj-wrapper">
             <NavLink to="/addProject" className="add-proj-icon">
-              <img src="./client/images/png/addIcon@2x.png"></img>
+              <img src="./client/images/png/addIcon@2x.png"  data-tip data-for='sadFace' ></img>
             </NavLink>
           </li>
           <ProjectLinks projects={projects} />
+          <div className="sidebar-logo">
+            <img src="./client/images/png/dockdevPNG.png" />
+          </div>
         </ul>
         <TopNav params={this.props.params} />
         <div id="right-column">
@@ -39,6 +43,10 @@ class App extends Component {
             {children}
           </div>
         </div>
+        <ReactTooltip id='sadFace' type='warning' effect='solid'>
+  <span>Show sad face</span>
+</ReactTooltip>
+
       </div>
     );
   }
