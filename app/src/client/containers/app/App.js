@@ -5,12 +5,12 @@ import { loadConfig, appInitiation } from '../../actions/index';
 import NavLink from '../../components/assets/NavLink';
 import ProjectLinks from '../../components/assets/ProjectLinks';
 import TopNav from './TopNav';
-var ReactTooltip = require("react-tooltip");
+import ReactTooltip from 'react-tooltip';
 
 class App extends Component {
 
   componentWillMount() {
-    this.props.appInitiation();
+    // this.props.appInitiation();
   }
 
   componentDidMount() {

@@ -1,6 +1,7 @@
 import R from 'ramda';
-import { exec } from '../utils/utils';
-import { join } from 'path';
+import { exec, addPath } from '../utils/utils';
+
+const env = addPath({});
 
 /**
 * cleanFilePath() accepts a string file path and returns a string file path with any
@@ -26,7 +27,7 @@ export function cleanFilePath(basePath) {
  * @param {String} args
  * @return {} returns a promise that resolves to the stdout
  */
-export const rsync = (args) => exec(`rsync ${args}`);
+export const rsync = (args) => exec(`rsync ${args}`, { env });
 
 /**
  * selectWithin() returns a result object

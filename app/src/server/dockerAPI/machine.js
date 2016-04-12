@@ -1,7 +1,9 @@
 import { coroutine as co } from 'bluebird';
 import R from 'ramda';
-import { readFile, exec as execProm } from '../utils/utils';
+import { readFile, addPath, exec as execProm } from '../utils/utils';
 import { FAILED_TO_ACCESS_MACHINE } from '../appLevel/errorMsgs';
+
+const envVar = addPath({});
 
 /**
  * exec() returns a docker-machine terminal command promise that resolves to the stdout
@@ -10,7 +12,11 @@ import { FAILED_TO_ACCESS_MACHINE } from '../appLevel/errorMsgs';
  * @param {String} args
  * @return {} returns a promise that resolves to the stdout
  */
-const exec = (args) => execProm(`docker-machine ${args}`);
+const exec = (args) => execProm(`docker-machine ${args}`, { env: envVar });
+
+// exec('ls')
+//   .then(console.log)
+//   .catch(console.log);
 
 /**
  * inspect() returns a docker-machine terminal inspect command promise that resolves to the stdout
@@ -106,7 +112,7 @@ export const createVirtualBox = (machineName) =>
  * @return {Object} result
  */
 export const env = co(function *g(machineName) {
-  let result = yield exec(`env ${machineName}`);
+  let result = yield exec(`env --shell sh ${machineName}`);
   result = R.fromPairs(result.split('\n').slice(0, 4).map(val => val.substr(7).split('=')));
   for (const prop in result) {
     if (result.hasOwnProperty(prop)) {
@@ -178,3 +184,7 @@ export const removeMachineFolder = (projObj) =>
  */
 export const createMachineFolder = (projObj) =>
   ssh(projObj.machine, 'mkdir /home/docker/tmp');
+
+// machineConfig('dockdev')
+//   .then(console.log)
+//   .catch(console.log);
