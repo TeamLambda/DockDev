@@ -1,6 +1,6 @@
 import React, { PropTypes } from 'react';
 import { connect } from 'react-redux';
-import { clickDeployRemote, clickDeleteRemote } from '../../actions/index';
+import { clickDeployRemote, clickDeleteRemote, clickUpdateRemote } from '../../actions/index';
 
 const ProjectDeploy = ({ deployProject, updateProject, remote, deleteProject }) => {
   const notifTable = [
@@ -43,7 +43,7 @@ function mapStateToProps(state, ownProps) {
 function mapDispatchToProps(dispatch, ownProps) {
   return {
     deployProject: () => dispatch(clickDeployRemote(ownProps.params.projectName)),
-    updateProject: () => dispatch(),
+    updateProject: () => dispatch(clickUpdateRemote(ownProps.params.projectName)),
     deleteProject: () => dispatch(clickDeleteRemote(ownProps.params.projectName)),
   };
 }
