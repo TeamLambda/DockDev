@@ -1,0 +1,77 @@
+{
+  "projectName": "Example",
+  "cleanName": "example",
+  "basePath": "/Users/samhagan/dev/codesmith/DockDev/example-deploy/example_wo",
+  "containers": [
+    {
+      "cleanName": "example",
+      "image": "node",
+      "dockerId": "0cb149d5260b0f297241665a3fa2356710278f69b313d956c162a8a1dec49d5d",
+      "name": "example_node",
+      "dest": "/home/docker",
+      "server": true,
+      "status": "complete",
+      "machine": "dockdev"
+    },
+    {
+      "cleanName": "example",
+      "image": "mongo",
+      "dockerId": "c11eb40459e03a4bac4c3ec66638ce4c0cfc53ea6d35356a3b37e87ad0f54603",
+      "name": "example_mongo",
+      "dest": "",
+      "server": false,
+      "status": "complete",
+      "machine": "dockdev"
+    }
+  ],
+  "machine": "dockdev",
+  "remote": {
+    "cleanName": "example",
+    "basePath": "/Users/samhagan/dev/codesmith/DockDev/example-deploy/example_wo",
+    "machine": "dockdev-example",
+    "ipAddress": "104.236.236.48",
+    "containers": [
+      {
+        "cleanName": "example",
+        "image": "dockdev/example:6",
+        "dockerId": "2b074ebbfcbe071516cefd92c98f543cd6e39df923ba312d0290d609e5dad30e",
+        "name": "server6",
+        "server": true,
+        "status": "pending",
+        "machine": "dockdev-example"
+      },
+      {
+        "cleanName": "example",
+        "image": "mongo",
+        "dockerId": "d5f440accab4d37d9d21878ee712d0527c98bcece2d1016e5044e6b7eb9c5f17",
+        "name": "example_mongo",
+        "dest": "",
+        "server": false,
+        "status": "complete",
+        "machine": "dockdev-example"
+      },
+      {
+        "cleanName": "example",
+        "image": "jwilder/nginx-proxy",
+        "dockerId": "2e4ab11e519cd53bf89ae7dc9c1a317f76c012ad1fdab27030dc7b6c78d94e12",
+        "name": "proxy",
+        "dest": "",
+        "server": false,
+        "status": "pending",
+        "machine": "dockdev-example",
+        "nginx": true
+      }
+    ],
+    "counter": 7,
+    "status": 5,
+    "oldServer": {
+      "cleanName": "example",
+      "image": "dockdev/example:5",
+      "dockerId": "17997c4751b6011fbf63bbe5eeeebb70786fc8c4f8e0501f03f3d46e092f8a20",
+      "name": "server5",
+      "server": true,
+      "status": "pending",
+      "machine": "dockdev-example"
+    }
+  }
+}

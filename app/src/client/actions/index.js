@@ -640,10 +640,11 @@ function startRemoteServer(remoteObj, isPush = false) {
     const server = remoteObj.containers.filter(cont => cont.server)[0];
     docker.containerStart(server.machine, server.dockerId)
       .then(() => {
-        projConfig.writeRemote(remoteObj, remoteObj.basePath);
-        dispatch(startedRemoteContainers(remoteObj));
+        const newRemoteObj = { ...remoteObj, status: 5 };
+        projConfig.writeRemote(newRemoteObj, newRemoteObj.basePath);
+        dispatch(startedRemoteContainers(newRemoteObj));
         if (isPush) {
-          docker.containerStop(server.machine, remoteObj.oldServer.dockerId);
+          docker.containerStop(server.machine, newRemoteObj.oldServer.dockerId);
         }
       });
   };

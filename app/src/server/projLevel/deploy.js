@@ -37,7 +37,8 @@ export const setRemoteServerParams = (container, remoteObj) => ({
   image: container.image,
   name: container.name,
   Env: [
-    `VIRTUAL_HOST=${remoteObj.ipAddress}`,
+    // `VIRTUAL_HOST=${remoteObj.ipAddress}`,
+    'VIRTUAL_HOST=~.*',
   ],
   HostConfig: {
     Links: remoteObj.links,
