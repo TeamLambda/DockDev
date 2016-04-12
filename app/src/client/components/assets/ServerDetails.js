@@ -2,7 +2,10 @@ import React, { PropTypes } from 'react';
 import ContainerControls from './ContainerControls';
 import ProjNavLinks from './projNavLinks';
 
-const ServerDetailContainer = ({ details, logo }) => {
+const ServerDetailContainer = ({ details, logo, dockdevIP, dbInfo }) => {
+  const ipString = `IPAddress = ${dockdevIP}:3000`;
+  const dbDisplay = dbInfo.map((info, idx) =>
+    (<li className="list-group-item" key={idx}>{info}</li>));
   return (
     <div>
       <div className="card-deck-wrapper">
@@ -26,7 +29,7 @@ const ServerDetailContainer = ({ details, logo }) => {
             <ul className="list-group list-group-flush">
               <li className="list-group-item">
                 <input className="form-control form-control-lg" type="text"
-                  placeholder="PORT http:168.158.0.1:3000"
+                  placeholder={ipString}
                 />
               </li>
               <li className="list-group-item">
@@ -37,6 +40,7 @@ const ServerDetailContainer = ({ details, logo }) => {
                   Last, visit the above URL to with your preferred browser to see your project.
                 </p>
               </li>
+              {dbDisplay}
             </ul>
           </div>
         </div>
@@ -48,6 +52,8 @@ const ServerDetailContainer = ({ details, logo }) => {
 ServerDetailContainer.propTypes = {
   details: PropTypes.object.isRequired,
   logo: PropTypes.string,
+  dockdevIP: PropTypes.string,
+  dbInfo: PropTypes.array,
 };
 
 export default ServerDetailContainer;

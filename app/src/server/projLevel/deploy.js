@@ -10,7 +10,6 @@ import { containerObj, createRemoteNetwork } from './containerMgmt';
 import {
   FAILED_TO_CREATE_DOCKERFILE,
   FAILED_TO_SYNC_TO_REMOTE,
-  FAILED_TO_BUILD_SERVER_IMAGE,
   NO_DOTOKEN,
 } from '../appLevel/errorMsgs';
 
@@ -37,12 +36,10 @@ export const setRemoteServerParams = (container, remoteObj) => ({
   image: container.image,
   name: container.name,
   Env: [
-    // `VIRTUAL_HOST=${remoteObj.ipAddress}`,
     'VIRTUAL_HOST=~.*',
   ],
   HostConfig: {
     Links: remoteObj.links,
-    // NetworkMode: container.cleanName,
   },
 });
 
@@ -57,9 +54,6 @@ export const setRemoteServerParams = (container, remoteObj) => ({
 export const setRemoteDbs = (container) => ({
   image: container.image,
   name: container.name,
-  HostConfig: {
-    // NetworkMode: container.cleanName,
-  },
 });
 
 /**
@@ -75,7 +69,6 @@ export const setProxyParams = (container) => ({
   HostConfig: {
     Binds: ['/var/run/docker.sock:/tmp/docker.sock:ro'],
     PortBindings: { ['80/tcp']: [{ HostPort: '80' }] },
-    // NetworkMode: 'bridge',
   },
   ExposedPorts: {
     ['80/tcp']: {},
@@ -115,7 +108,7 @@ export const createDockerfile = co(function *g(containers, basePath) {
       'WORKDIR /app\n' +
       'RUN ["npm", "install", "--production"]\n' +
       'EXPOSE 3000\n' +
-      'CMD ["npm", "start"]';
+      'CMD ["npm", "run", "dockdev:start"]';
     yield writeFile(`${basePath}/Dockerfile`, dockerFile);
     return true;
   } catch (e) {

@@ -52,6 +52,7 @@ import {
   DELETE_REMOTE,
   COMPLETED_SERVER_IMAGE_UPDATE,
   COMPLETED_SERVER_CONTAINER_UPDATE,
+  ADD_IP,
 } from '../actions';
 
 function config(state = { isFetching: false }, action) {
@@ -298,6 +299,15 @@ function activeProject(state = {}, action) {
   }
 }
 
+function dockdevIP(state = '', action) {
+  switch (action.type) {
+    case ADD_IP:
+      return action.ipAddress;
+    default:
+      return state;
+  }
+}
+
 const rootReducer = combineReducers({
   config,
   routing,
@@ -305,6 +315,7 @@ const rootReducer = combineReducers({
   alerts,
   availableImages,
   activeProject,
+  dockdevIP,
 });
 
 export default rootReducer;

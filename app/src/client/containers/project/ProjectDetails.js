@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { PropTypes } from 'react';
 import { connect } from 'react-redux';
 import Container from '../../components/assets/Container';
 import ServerDetails from '../../components/assets/ServerDetails';
@@ -7,6 +7,13 @@ import { availableImages } from './server/main';
 import NavLink from '../../components/assets/NavLink';
 
 const ProjectDetail = (props) => {
+  const dbInfo = props.project.containers
+    .filter(cont => !cont.server)
+    .map(cont => {
+      const port = availableImages.dbPorts[cont.image];
+      return `${cont.name}:${port}`;
+    });
+
   const server = props.project.containers
     .filter(cont => cont.server)
     .map(cont => {
@@ -16,6 +23,8 @@ const ProjectDetail = (props) => {
           key={cont.name}
           details={cont}
           onClick={onClick}
+          dockdevIP={props.dockdevIP}
+          dbInfo={dbInfo}
           logo={availableImages.logo[cont.image]}
         />
       );
@@ -61,13 +70,15 @@ const ProjectDetail = (props) => {
 };
 
 ProjectDetail.propTypes = {
-  project: React.PropTypes.object,
-  clickDelContainer: React.PropTypes.func,
+  project: PropTypes.object,
+  clickDelContainer: PropTypes.func,
+  dockdevIP: PropTypes.string,
 };
 
 function mapStateToProps(state, ownProps) {
   const project = state.projects[ownProps.params.projectName];
-  return { project };
+  const { dockdevIP } = state;
+  return { project, dockdevIP };
 }
 
 export default connect(
