@@ -67,6 +67,7 @@ gulp.task('react', () => {
     'moment',
     'chokidar',
     'bluebird',
+    'react-tooltip',
     './server/main',
   ]);
 

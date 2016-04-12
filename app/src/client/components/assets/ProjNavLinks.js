@@ -13,9 +13,6 @@ const ProjNavLinks = ({ cleanName, remove }) => (
     <div className="dropdown-menu">
       <ul>
         <li>
-          <Link className="nav-link" to={`/projects/${cleanName}`}>Home</Link>
-        </li>
-        <li>
           <Link className="nav-link" to={`/projects/${cleanName}/container`}>Add</Link>
         </li>
         <li>

@@ -15,9 +15,9 @@ class AddContainer extends Component {
         const style = {};
         if (image.selected) {
           style.color = '';
-          style.backgroundColor = 'black';
+          style.backgroundColor = '#00AEEF';
           style.borderRadius = '6px';
-          style.borderColor = '#286090';
+          style.borderColor = '#00AEEF';
         }
         const onClick = () => this.props.onClick(image, idx);
 
@@ -33,9 +33,9 @@ class AddContainer extends Component {
         const style = {};
         if (image.selected) {
           style.color = 'white';
-          style.backgroundColor = '#71A0D7';
+          style.backgroundColor = '#00AEEF';
           style.borderRadius = '2px';
-          style.borderColor = '#6894C8';
+          style.borderColor = '#00AEEF';
         }
         const onClick = () => this.props.onClick(image, idx + servers.length);
 
