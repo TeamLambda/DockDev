@@ -128,6 +128,7 @@ function remote(state = {}, action) {
       return {
         ...state,
         status: action.remoteObj.status,
+        ipAddress: action.remoteObj.ipAddress,
       };
     case COMPLETED_SERVER_IMAGE_BUILD:
     case PULLED_REMOTE_IMAGES:

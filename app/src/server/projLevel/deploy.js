@@ -33,9 +33,12 @@ const createRemoteObj = (cleanName, basePath) => ({
  * @param {String} uuid
  * @return {Object} returns an object with the image, project path, network mode, and working dir
  */
-export const setRemoteServerParams = (container) => ({
+export const setRemoteServerParams = (container, remoteObj) => ({
   image: container.image,
   name: container.name,
+  Env: [
+    `VIRTUAL_HOST=${remoteObj.ipAddress}`,
+  ],
   HostConfig: {
     NetworkMode: container.cleanName,
   },
@@ -70,6 +73,7 @@ export const setProxyParams = (container) => ({
   HostConfig: {
     Binds: ['/var/run/docker.sock:/tmp/docker.sock:ro'],
     PortBindings: { ['80/tcp']: [{ HostPort: '80' }] },
+    NetworkMode: container.cleanName,
   },
   ExposedPorts: {
     ['80/tcp']: {},
@@ -209,14 +213,14 @@ export const remoteServerObj = (remoteObj) => ({
   machine: remoteObj.machine,
 });
 
-const getRemoteConfig = (container) => {
-  if (container.server) return setRemoteServerParams(container);
+const getRemoteConfig = (container, remoteObj) => {
+  if (container.server) return setRemoteServerParams(container, remoteObj);
   if (container.nginx) return setProxyParams(container);
   return setRemoteDbs(container);
 };
 
 export const createRemoteContainer = co(function *g(container, remoteObj) {
-  const config = getRemoteConfig(container);
+  const config = getRemoteConfig(container, remoteObj);
   const dockCont = yield containerCreate(remoteObj.machine, config);
   return { ...container, dockerId: dockCont.Id, machine: remoteObj.machine };
 });
