@@ -35,6 +35,20 @@ export const logo = {
   go: 'client/images/png/container-logos/godb.jpg',
 };
 
+export const dbPorts = {
+  redis: 6379,
+  mysql: 3306,
+  mongo: 27017,
+  postgres: 5432,
+  elasticsearch: 9200,
+  mariadb: 3306,
+  memcached: 11211,
+  neo4j: 7474,
+  rethinkdb: 28015,
+  cassandra: 7000,
+  couchbase: 8091,
+};
+
 /**
 * @param {Object} ImageObj has the name of the image and it's available versions
 */

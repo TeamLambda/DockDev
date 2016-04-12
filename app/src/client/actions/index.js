@@ -65,6 +65,7 @@ export const DELETE_REMOTE = 'DELETE_REMOTE';
 export const COMPLETED_SERVER_IMAGE_UPDATE = 'COMPLETED_SERVER_IMAGE_UPDATE';
 export const UPDATING_REMOTE_SERVER_CONTAINER = 'UPDATING_REMOTE_SERVER_CONTAINER';
 export const COMPLETED_SERVER_CONTAINER_UPDATE = 'COMPLETED_SERVER_CONTAINER_UPDATE';
+export const ADD_IP = 'ADD_IP';
 
 export function redirectHome() {
   return dispatch => dispatch(push('/'));
@@ -222,9 +223,24 @@ function loadConfigError(err) {
   );
 }
 
+function gotMachineIp(ipAddress) {
+  return {
+    type: ADD_IP,
+    ipAddress,
+  };
+}
+
+export function requestMachineIp() {
+  return dispatch =>
+    machine.inspect(defaultConfig.machine)
+    .then(rsync.selectSSHandIP)
+    .then(data => dispatch(gotMachineIp(data.IPAddress)));
+}
+
 export function loadConfig() {
   return dispatch => {
     dispatch(requestConfig());
+    dispatch(requestMachineIp());
     return appConfig.loadConfigFile()
       .then(response => {
         dispatch(receiveConfig(response));
@@ -644,7 +660,8 @@ function startRemoteServer(remoteObj, isPush = false) {
         projConfig.writeRemote(newRemoteObj, newRemoteObj.basePath);
         dispatch(startedRemoteContainers(newRemoteObj));
         if (isPush) {
-          docker.containerStop(server.machine, newRemoteObj.oldServer.dockerId);
+          docker.containerStop(server.machine, newRemoteObj.oldServer.dockerId)
+            .catch(() => 'already stopped');
         }
       });
   };
@@ -725,17 +742,30 @@ function createRemoteContainers(remoteObj) {
         ),
         remoteObj,
       });
-    const dbs = remoteObj.containers.filter(cont => !cont.server && !cont.nginx)
-      .map(cont => `${cont.name}:${cont.name}`);
-    const newRemoteObj = { ...remoteObj, links: dbs };
-    const containerArray = remoteObj.containers.map(cont =>
-      deploy.createRemoteContainer(cont, newRemoteObj));
+
+    const links = remoteObj.containers.filter(cont => !cont.server && !cont.nginx)
+        .map(cont => `${cont.name}:${cont.name}`);
+
+    const newRemoteObj = { ...remoteObj, links };
+
+    const server = newRemoteObj.containers.filter(cont => cont.server)[0];
+
+    // create all non-server containers
+    const containerArray = newRemoteObj.containers
+      .filter(cont => !cont.server)
+      .map(cont => deploy.createRemoteContainer(cont, newRemoteObj));
+
     Promise.all(containerArray)
-      .then(res => dispatch(startProxyServer({
-        ...remoteObj,
-        containers: [...res],
-        status: 4,
-      })));
+      .then(res => {
+        deploy.createRemoteContainer(server, newRemoteObj)
+          .then(newServer => dispatch(startProxyServer(
+            {
+              ...newRemoteObj,
+              containers: [newServer, ...res],
+              status: 4,
+            }
+          )));
+      });
   };
 }
 
