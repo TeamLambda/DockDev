@@ -50,6 +50,8 @@ import {
   CREATED_REMOTE_CONTAINERS,
   STARTED_REMOTE_CONTAINERS,
   DELETE_REMOTE,
+  COMPLETED_SERVER_IMAGE_UPDATE,
+  COMPLETED_SERVER_CONTAINER_UPDATE,
 } from '../actions';
 
 function config(state = { isFetching: false }, action) {
@@ -135,11 +137,14 @@ function remote(state = {}, action) {
     case COMPLETED_SERVER_IMAGE_BUILD:
     case PULLED_REMOTE_IMAGES:
     case CREATED_REMOTE_CONTAINERS:
+    case COMPLETED_SERVER_IMAGE_UPDATE:
+    case COMPLETED_SERVER_CONTAINER_UPDATE:
       return {
         ...state,
         status: action.remoteObj.status,
         containers: [...action.remoteObj.containers],
         counter: action.remoteObj.counter,
+        oldServer: action.remoteObj.oldServer || '',
       };
     default:
       return state;
@@ -203,6 +208,8 @@ function project(state = {}, action) {
     case CREATING_REMOTE_CONTAINERS:
     case CREATED_REMOTE_CONTAINERS:
     case STARTED_REMOTE_CONTAINERS:
+    case COMPLETED_SERVER_IMAGE_UPDATE:
+    case COMPLETED_SERVER_CONTAINER_UPDATE:
       return {
         ...state,
         remote: remote(state.remote, action),
@@ -245,6 +252,8 @@ function projects(state = {}, action) {
     case CREATING_REMOTE_CONTAINERS:
     case CREATED_REMOTE_CONTAINERS:
     case STARTED_REMOTE_CONTAINERS:
+    case COMPLETED_SERVER_IMAGE_UPDATE:
+    case COMPLETED_SERVER_CONTAINER_UPDATE:
       return { ...state,
         [action.remoteObj.cleanName]: project(state[action.remoteObj.cleanName], action),
       };

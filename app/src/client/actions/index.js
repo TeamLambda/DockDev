@@ -62,6 +62,9 @@ export const CREATING_REMOTE_CONTAINERS = 'CREATING_REMOTE_CONTAINERS';
 export const CREATED_REMOTE_CONTAINERS = 'CREATED_REMOTE_CONTAINERS';
 export const STARTED_REMOTE_CONTAINERS = 'STARTED_REMOTE_CONTAINERS';
 export const DELETE_REMOTE = 'DELETE_REMOTE';
+export const COMPLETED_SERVER_IMAGE_UPDATE = 'COMPLETED_SERVER_IMAGE_UPDATE';
+export const UPDATING_REMOTE_SERVER_CONTAINER = 'UPDATING_REMOTE_SERVER_CONTAINER';
+export const COMPLETED_SERVER_CONTAINER_UPDATE = 'COMPLETED_SERVER_CONTAINER_UPDATE';
 
 export function redirectHome() {
   return dispatch => dispatch(push('/'));
@@ -632,6 +635,20 @@ function startedRemoteContainers(remoteObj) {
   };
 }
 
+function startRemoteServer(remoteObj, isPush = false) {
+  return dispatch => {
+    const server = remoteObj.containers.filter(cont => cont.server)[0];
+    docker.containerStart(server.machine, server.dockerId)
+      .then(() => {
+        projConfig.writeRemote(remoteObj, remoteObj.basePath);
+        dispatch(startedRemoteContainers(remoteObj));
+        if (isPush) {
+          docker.containerStop(server.machine, remoteObj.oldServer.dockerId);
+        }
+      });
+  };
+}
+
 function startingRemoteContainers(remoteObj) {
   return dispatch => {
     dispatch(
@@ -642,13 +659,13 @@ function startingRemoteContainers(remoteObj) {
         remoteObj,
       }
     );
-    const containerArray = remoteObj.containers.filter(cont => !cont.nginx)
+    const containerArray = remoteObj.containers.filter(cont => !cont.nginx && !cont.server)
       .map(cont => docker.containerStart(cont.machine, cont.dockerId));
     Promise.all(containerArray)
       .then(() => {
         const newRemoteObj = { ...remoteObj, status: 5 };
         projConfig.writeRemote(newRemoteObj, newRemoteObj.basePath);
-        dispatch(startedRemoteContainers(newRemoteObj));
+        dispatch(startRemoteServer(newRemoteObj));
       });
   };
 }
@@ -658,6 +675,43 @@ function startProxyServer(remoteObj) {
     const proxy = remoteObj.containers.filter(cont => cont.nginx)[0];
     docker.containerStart(proxy.machine, proxy.dockerId)
       .then(() => dispatch(startingRemoteContainers(remoteObj)));
+  };
+}
+
+function completedServerContainerUpdate(remoteObj) {
+  return dispatch => {
+    dispatch({
+      type: COMPLETED_SERVER_CONTAINER_UPDATE,
+      remoteObj,
+    });
+    dispatch(startRemoteServer(remoteObj, true));
+  };
+}
+
+function createUpdatedServerContainer(remoteObj) {
+  return dispatch => {
+    dispatch(
+      { ...createMessage(
+        UPDATING_REMOTE_SERVER_CONTAINER,
+        `Updating remote server container for ${remoteObj.cleanName}`
+        ),
+        remoteObj,
+      });
+    const dbs = remoteObj.containers.filter(cont => !cont.server && !cont.nginx)
+      .map(cont => `${cont.name}:${cont.name}`);
+    const newRemoteObj = { ...remoteObj, links: dbs };
+    const server = newRemoteObj.containers.filter(cont => cont.server)[0];
+    const idx = projConfig.findContainer(newRemoteObj.containers, server.name);
+    deploy.createRemoteContainer(server, newRemoteObj)
+      .then(res => dispatch(completedServerContainerUpdate({
+        ...remoteObj,
+        containers: [
+          ...remoteObj.containers.slice(0, idx),
+          res,
+          ...remoteObj.containers.slice(idx + 1),
+        ],
+        status: 4,
+      })));
   };
 }
 
@@ -727,11 +781,21 @@ function completedServerImageBuild(remoteObj) {
   };
 }
 
-function completedPushImageBuild() {
-  return;
+function completedServerImageUpdate(remoteObj) {
+  return dispatch => {
+    dispatch(
+      { ...createMessage(
+        COMPLETED_SERVER_IMAGE_UPDATE,
+        `Completed server image update for ${remoteObj.cleanName}`
+        ),
+        remoteObj,
+      }
+    );
+    dispatch(createUpdatedServerContainer(remoteObj));
+  };
 }
 
-function startServerImageBuild(remoteObj, isPush = false) {
+function startServerImageBuild(remoteObj) {
   return dispatch => {
     dispatch(createMessage(
       START_SERVER_IMAGE_BUILD,
@@ -746,8 +810,30 @@ function startServerImageBuild(remoteObj, isPush = false) {
           counter: remoteObj.counter + 1,
           status: 2,
         };
-        if (isPush) return dispatch(completedPushImageBuild(remoteObj));
         return dispatch(completedServerImageBuild(newRemoteObj));
+      });
+  };
+}
+
+function startServerImageUpdate(remoteObj) {
+  return dispatch => {
+    const oldServer = { ...remoteObj.containers.filter(cont => cont.server)[0] };
+    const idx = projConfig.findContainer(remoteObj.containers, oldServer.name);
+    return deploy.buildServerImage(remoteObj)
+      .then(() => {
+        const serverObj = deploy.remoteServerObj(remoteObj);
+        const newRemoteObj = {
+          ...remoteObj,
+          containers: [
+            ...remoteObj.containers.slice(0, idx),
+            serverObj,
+            ...remoteObj.containers.slice(idx + 1),
+          ],
+          oldServer,
+          counter: remoteObj.counter + 1,
+          status: 3,
+        };
+        dispatch(completedServerImageUpdate(newRemoteObj));
       });
   };
 }
@@ -761,7 +847,8 @@ function syncedToRemote(remoteObj, isPush = false) {
         ),
         remoteObj,
       });
-    return dispatch(startServerImageBuild(remoteObj, isPush));
+    if (isPush) return dispatch(startServerImageUpdate(remoteObj));
+    return dispatch(startServerImageBuild(remoteObj));
   };
 }
 
@@ -824,9 +911,19 @@ export function clickDeleteRemote(cleanName) {
   return (dispatch, getState) => {
     const project = getState().projects[cleanName];
     if (project.remote.machine) {
-      dispatch(redirectHome());
+      dispatch(redirect('projects', cleanName));
       deploy.deleteRemoteHost(project.remote.machine, project.basePath)
         .then(dispatch(deleteRemote(project.cleanName)));
+    }
+  };
+}
+
+export function clickUpdateRemote(cleanName) {
+  return (dispatch, getState) => {
+    const project = getState().projects[cleanName];
+    const remote = project.remote;
+    if (remote.status === 5) {
+      dispatch(createDockerfile(remote, true));
     }
   };
 }
