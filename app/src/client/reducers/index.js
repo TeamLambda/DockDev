@@ -49,6 +49,7 @@ import {
   CREATING_REMOTE_CONTAINERS,
   CREATED_REMOTE_CONTAINERS,
   STARTED_REMOTE_CONTAINERS,
+  DELETE_REMOTE,
 } from '../actions';
 
 function config(state = { isFetching: false }, action) {
@@ -118,6 +119,7 @@ function alerts(state = [], action) {
 
 function remote(state = {}, action) {
   switch (action.type) {
+    case ADDING_REMOTE:
     case ADDED_REMOTE:
       return {
         ...action.remoteObj,
@@ -193,6 +195,7 @@ function project(state = {}, action) {
         ...state,
         containers: containers(state.containers, action),
       };
+    case ADDING_REMOTE:
     case ADDED_REMOTE:
     case COMPLETED_SYNC_TO_REMOTE:
     case COMPLETED_SERVER_IMAGE_BUILD:
@@ -203,6 +206,11 @@ function project(state = {}, action) {
       return {
         ...state,
         remote: remote(state.remote, action),
+      };
+    case DELETE_REMOTE:
+      return {
+        ...state,
+        remote: {},
       };
     default:
       return state;
@@ -229,6 +237,7 @@ function projects(state = {}, action) {
         ...newProj,
       };
     }
+    case ADDING_REMOTE:
     case ADDED_REMOTE:
     case COMPLETED_SYNC_TO_REMOTE:
     case COMPLETED_SERVER_IMAGE_BUILD:
@@ -238,6 +247,11 @@ function projects(state = {}, action) {
     case STARTED_REMOTE_CONTAINERS:
       return { ...state,
         [action.remoteObj.cleanName]: project(state[action.remoteObj.cleanName], action),
+      };
+    case DELETE_REMOTE:
+      return {
+        ...state,
+        [action.cleanName]: project(state[action.cleanName], action),
       };
     default:
       return state;
