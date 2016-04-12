@@ -1,6 +1,7 @@
 import React, { PropTypes } from 'react';
 import { connect } from 'react-redux';
 import { redirect } from '../../actions/index';
+var ReactTooltip = require("react-tooltip");
 
 const TopNav = ({ clickSettings, active, activeProject, projectName }) => {
   let clickActive = () => active('');
@@ -10,13 +11,13 @@ const TopNav = ({ clickSettings, active, activeProject, projectName }) => {
 
   return (
     <div className="content-top-nav">
-    {projectName}
      <div className="btn-group top-nav-btn-group" data-toggle="buttons">
 
        <label className="btn btn-primary active">
-        <input type="radio" name="options" id="option1" autoComplete="off"></input>
-          <img src="./client/images/png/sound.png"></img>
+        <input type="radio" name="options" id="option1" autoComplete="off" ></input>
+          <img src="./client/images/png/sound.png" data-tip="Notifications"  data-border="true"></img>
        </label>
+
 
        {/*<label className="btn btn-primary" onClick={clickActive}>
          <input type="radio" name="options" id="option2" autoComplete="off"></input>
@@ -25,9 +26,9 @@ const TopNav = ({ clickSettings, active, activeProject, projectName }) => {
 
        <label className="btn btn-primary" onClick={clickSettings}>
          <input type="radio" name="options" id="option3" autoComplete="off"></input>
-           <img src="./client/images/png/gear.png"></img>
-
+           <img src="./client/images/png/gear.png" data-tip="Settings" data-border="true"></img>
        </label>
+       <ReactTooltip place="bottom" type="light" effect="float"/>
      </div>
     </div>
   );

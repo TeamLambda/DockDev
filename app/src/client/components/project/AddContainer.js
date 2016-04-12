@@ -15,9 +15,9 @@ class AddContainer extends Component {
         const style = {};
         if (image.selected) {
           style.color = '';
-          style.backgroundColor = 'black';
+          style.backgroundColor = '#00AEEF';
           style.borderRadius = '6px';
-          style.borderColor = '#286090';
+          style.borderColor = '#00AEEF';
         }
         const onClick = () => this.props.onClick(image, idx);
 

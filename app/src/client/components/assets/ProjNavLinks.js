@@ -11,9 +11,6 @@ const ProjNavLinks = ({ cleanName }) => (
     <div className="dropdown-menu">
       <ul>
         <li>
-          <Link className="nav-link" to={`/projects/${cleanName}`}>Home</Link>
-        </li>
-        <li>
           <Link className="nav-link" to={`/projects/${cleanName}/container`}>Add</Link>
         </li>
         <li>
@@ -21,7 +18,7 @@ const ProjNavLinks = ({ cleanName }) => (
         </li>
       </ul>
       <div className="dropdown-divider"></div>
-      <a className="dropdown-item" href="#">Delete</a>
+      <a className="dropdown-item" href="#">Delete </a>
     </div>
   </div>
 );
