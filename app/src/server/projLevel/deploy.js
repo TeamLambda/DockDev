@@ -1,11 +1,11 @@
-import { createMachine, inspect, ssh } from '../dockerAPI/machine';
+import { createMachine, inspect, ssh, removeMachine } from '../dockerAPI/machine';
 import { coroutine as co } from 'bluebird';
 import { writeFile } from '../utils/utils';
 import { containerCreate } from '../dockerAPI/docker';
 import * as rsync from './rsync';
 import defaultConfig from '../appLevel/defaultConfig';
 import { readConfig } from '../appLevel/appConfig';
-import { loadProject, writeProj } from './projConfig';
+import { loadProject, writeProj, writeRemote } from './projConfig';
 import { containerObj, createRemoteNetwork } from './containerMgmt';
 import {
   FAILED_TO_CREATE_DOCKERFILE,
@@ -40,7 +40,8 @@ export const setRemoteServerParams = (container, remoteObj) => ({
     `VIRTUAL_HOST=${remoteObj.ipAddress}`,
   ],
   HostConfig: {
-    NetworkMode: container.cleanName,
+    Links: remoteObj.links,
+    // NetworkMode: container.cleanName,
   },
 });
 
@@ -56,7 +57,7 @@ export const setRemoteDbs = (container) => ({
   image: container.image,
   name: container.name,
   HostConfig: {
-    NetworkMode: container.cleanName,
+    // NetworkMode: container.cleanName,
   },
 });
 
@@ -73,7 +74,7 @@ export const setProxyParams = (container) => ({
   HostConfig: {
     Binds: ['/var/run/docker.sock:/tmp/docker.sock:ro'],
     PortBindings: { ['80/tcp']: [{ HostPort: '80' }] },
-    NetworkMode: container.cleanName,
+    // NetworkMode: 'bridge',
   },
   ExposedPorts: {
     ['80/tcp']: {},
@@ -225,80 +226,8 @@ export const createRemoteContainer = co(function *g(container, remoteObj) {
   return { ...container, dockerId: dockCont.Id, machine: remoteObj.machine };
 });
 
-
-// const basePath = join(__dirname, '..', '..', '..', '..', 'example-deploy', 'deploy');
-//
-// syncFilesToRemote(basePath, 'test2', true)
-//   .then(val => console.log(val))
-//   .catch(err => console.log(err));
-
-
-// /**
-//  * getDbNames() returns the images and names of all the database in the project
-//  * based on the passed in project object
-//  *
-//  * @param {Object} projObj
-//  * @return {Array} dbImageNames
-//  */
-// function getDbNames(projObj) {
-//   const dbImageNames = [];
-//   for (const contId in projObj.containers) {
-//     if (!projObj.containers[contId].server) {
-//       dbImageNames.push(projObj.containers[contId].image);
-//       dbImageNames.push(projObj.containers[contId].name);
-//     }
-//   }
-//   return dbImageNames;
-// }
-//
-// /**
-//  * pullImagesOcean() returns true after pulling and running all the db images on DigitalOcean
-//  * based on the passed in digital ocean machine neame and array of db images and names
-//  *
-//  * @param {String} dropletMachName
-//  * @param {Array} dbNamesArr
-//  * @return {Boolean} true
-//  */
-// const pullImagesOcean = co(function *g(dropletMachName, dbNamesArr) {
-//   for (let i = 0; i < dbNamesArr.length; i += 2) {
-//     try {
-//       yield ssh(dropletMachName, `docker run -d --name ${dbNamesArr[i + 1]} ${dbNamesArr[i]}`);
-//     } catch (e) {
-//       console.log(e);
-//     }
-//   }
-//   return true;
-// });
-//
-// /**
-//  * buildDockerFile() returns true after creating a Dockerfile
-//  *
-//  * @return {Boolean} true
-//  */
-// const buildDockerFile = co(function *g() {
-//   // what if they deploy twice and it already exists??
-
-//   return true;
-// });
-//
-// /**
-//  * deployToOcean() returns true after walking through a sequence of events to deploy
-//  * a project to digital ocean
-//  * based on the passed in project object, remote machine name, and access token
-//  *
-//  * @param {Object} projObj
-//  * @param {String} accessToken
-//  * @return {Boolean} true
-//  */
-// export const deployToOcean = co(function *g(projObj, accessToken) {
-//   const remoteMachName = projObj.projectName.replace(' ', '_');
-//   const Token = storeOceanToken(accessToken);
-//   yield dropletOnOcean(Token, remoteMachName);
-//   const dbNamesArray = getDbNames(projObj);
-//   yield pullImagesOcean(remoteMachName, dbNamesArray);
-//   yield buildDockerFile();
-//   const remoteSync = generateRsync(projObj, 'remoteMachine');
-//   yield remoteSync;
-//   yield ssh(remoteMachName, 'docker build ./tmp');
-//   return true;
-// });
+export const deleteRemoteHost = co(function *g(remoteName, basePath) {
+  yield removeMachine(remoteName);
+  yield writeRemote({}, basePath);
+  return true;
+});

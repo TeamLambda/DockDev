@@ -61,6 +61,7 @@ export const PULLED_REMOTE_IMAGES = 'PULLED_REMOTE_IMAGES';
 export const CREATING_REMOTE_CONTAINERS = 'CREATING_REMOTE_CONTAINERS';
 export const CREATED_REMOTE_CONTAINERS = 'CREATED_REMOTE_CONTAINERS';
 export const STARTED_REMOTE_CONTAINERS = 'STARTED_REMOTE_CONTAINERS';
+export const DELETE_REMOTE = 'DELETE_REMOTE';
 
 export function redirectHome() {
   return dispatch => dispatch(push('/'));
@@ -644,7 +645,11 @@ function startingRemoteContainers(remoteObj) {
     const containerArray = remoteObj.containers.filter(cont => !cont.nginx)
       .map(cont => docker.containerStart(cont.machine, cont.dockerId));
     Promise.all(containerArray)
-      .then(dispatch(startedRemoteContainers({ ...remoteObj, status: 6 })));
+      .then(() => {
+        const newRemoteObj = { ...remoteObj, status: 5 };
+        projConfig.writeRemote(newRemoteObj, newRemoteObj.basePath);
+        dispatch(startedRemoteContainers(newRemoteObj));
+      });
   };
 }
 
@@ -665,13 +670,16 @@ function createRemoteContainers(remoteObj) {
         ),
         remoteObj,
       });
+    const dbs = remoteObj.containers.filter(cont => !cont.server && !cont.nginx)
+      .map(cont => `${cont.name}:${cont.name}`);
+    const newRemoteObj = { ...remoteObj, links: dbs };
     const containerArray = remoteObj.containers.map(cont =>
-      deploy.createRemoteContainer(cont, remoteObj));
+      deploy.createRemoteContainer(cont, newRemoteObj));
     Promise.all(containerArray)
       .then(res => dispatch(startProxyServer({
         ...remoteObj,
         containers: [...res],
-        status: 5,
+        status: 4,
       })));
   };
 }
@@ -685,7 +693,7 @@ function pulledRemoteImages(remoteObj) {
         ),
         remoteObj,
       });
-    dispatch(createRemoteContainers({ ...remoteObj, status: 4 }));
+    dispatch(createRemoteContainers({ ...remoteObj }));
   };
 }
 
@@ -777,10 +785,13 @@ function createDockerfile(remoteObj, isPush = false) {
 }
 
 function addingRemote(project) {
-  return createMessage(
-    ADDING_REMOTE,
-    `Starting deploy of ${project.projectName} to Digital Ocean`
-  );
+  return {
+    ...createMessage(
+      ADDING_REMOTE,
+      `Starting deploy of ${project.projectName} to Digital Ocean`
+    ),
+    remoteObj: { cleanName: project.cleanName, machine: 'n/a', status: 0 },
+  };
 }
 
 function addedRemote(remoteObj) {
@@ -799,5 +810,23 @@ export function clickDeployRemote(cleanName) {
     dispatch(addingRemote(project));
     return deploy.initRemote(cleanName, project.basePath)
       .then(res => dispatch(addedRemote(res)));
+  };
+}
+
+function deleteRemote(cleanName) {
+  return {
+    type: DELETE_REMOTE,
+    cleanName,
+  };
+}
+
+export function clickDeleteRemote(cleanName) {
+  return (dispatch, getState) => {
+    const project = getState().projects[cleanName];
+    if (project.remote.machine) {
+      dispatch(redirectHome());
+      deploy.deleteRemoteHost(project.remote.machine, project.basePath)
+        .then(dispatch(deleteRemote(project.cleanName)));
+    }
   };
 }
