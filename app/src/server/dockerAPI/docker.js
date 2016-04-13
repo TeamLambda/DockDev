@@ -1,7 +1,7 @@
 import rp from 'request-promise';
 import * as machine from './machine.js';
 import { coroutine as co } from 'bluebird';
-import { exec as execProm } from '../utils/utils';
+import { exec as execProm, addPath } from '../utils/utils';
 import {
   FAILED_TO_ACCESS_MACHINE,
   FAILED_TO_START_CONTAINER,
@@ -145,7 +145,7 @@ function dockerCommand(cmd) {
       if (cmd.cmd === 'create') config.body = arg;
       return yield rp(config);
     } catch (e) {
-      if (e === FAILED_TO_ACCESS_MACHINE) throw FAILED_TO_ACCESS_MACHINE;
+      // if (e === FAILED_TO_ACCESS_MACHINE) throw FAILED_TO_ACCESS_MACHINE;
       throw e;
     }
   });
@@ -180,9 +180,13 @@ export const networkInspect = dockerCommand(commands.networkInspect);
  * @return {} returns a promise to pull the image or reject if there is an error
  */
 export const pullImage = co(function *g(machineName, image) {
-  const env = yield machine.env(machineName);
+  const env = addPath(yield machine.env(machineName));
   return yield exec(`pull ${image}`, { env });
 });
+
+// pullImage('dockdev-example', 'mongo')
+//   .then(console.log)
+//   .catch(console.log);
 
 /**
  * logs() returns a promise to execute docker logs on the command line
@@ -193,6 +197,6 @@ export const pullImage = co(function *g(machineName, image) {
  * @return {} returns a promise to execute docker logs
  */
 export const containerLogs = co(function *g(machineName, containerId) {
-  const env = yield machine.env(machineName);
+  const env = addPath(yield machine.env(machineName));
   return yield exec(`logs ${containerId}`, { env });
 });

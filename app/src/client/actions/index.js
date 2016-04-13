@@ -66,6 +66,7 @@ export const COMPLETED_SERVER_IMAGE_UPDATE = 'COMPLETED_SERVER_IMAGE_UPDATE';
 export const UPDATING_REMOTE_SERVER_CONTAINER = 'UPDATING_REMOTE_SERVER_CONTAINER';
 export const COMPLETED_SERVER_CONTAINER_UPDATE = 'COMPLETED_SERVER_CONTAINER_UPDATE';
 export const ADD_IP = 'ADD_IP';
+export const START_DEPLOY_UPDATE = 'START_DEPLOY_UPDATE';
 
 export function redirectHome() {
   return dispatch => dispatch(push('/'));
@@ -954,6 +955,10 @@ export function clickUpdateRemote(cleanName) {
     const project = getState().projects[cleanName];
     const remote = project.remote;
     if (remote.status === 5) {
+      dispatch({
+        type: START_DEPLOY_UPDATE,
+        remoteObj: { ...remote, status: 6 },
+      });
       dispatch(createDockerfile(remote, true));
     }
   };

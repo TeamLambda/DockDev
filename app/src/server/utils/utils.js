@@ -50,6 +50,41 @@ export const projectsObjToArray = (obj) => {
   return result;
 };
 
+export const addPath = (obj) => ({
+  ...obj,
+  PATH: '/usr/local/bin:/usr/bin',
+  HOME: process.env.HOME,
+});
+
+// PATH: '/Users/samhagan/.rbenv/shims:/Users/samhagan/.rbenv/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Library/TeX/texbin',
+// TMPDIR: '/var/folders/d0/884kl82x5gs2wdphhwdm8vr40000gn/T/',
+// LOGNAME: 'samhagan',
+// XPC_FLAGS: '0x0',
+// HOME: '/Users/samhagan',
+// Apple_PubSub_Socket_Render: '/private/tmp/com.apple.launchd.wziLhNnOJu/Render',
+// LANG: 'en_US.UTF-8',
+// COLORFGBG: '7;0',
+// USER: 'samhagan',
+// SSH_AUTH_SOCK: '/private/tmp/com.apple.launchd.I0iayJm2HW/Listeners',
+// TERM: 'xterm-256color',
+// ITERM_PROFILE: 'Default',
+// TERM_PROGRAM: 'iTerm.app',
+// XPC_SERVICE_NAME: '0',
+// SHELL: '/bin/zsh',
+// ITERM_SESSION_ID: 'w0t0p1',
+// PWD: '/Users/samhagan/dev/codesmith/DockDev/app/build/server/dockerAPI',
+// __CF_USER_TEXT_ENCODING: '0x1F5:0x0:0x0',
+// SHLVL: '1',
+// OLDPWD: '/Users/samhagan/dev/codesmith/DockDev/app/build/server',
+// ZSH: '/Users/samhagan/.oh-my-zsh',
+// RBENV_SHELL: 'zsh',
+// PAGER: 'less',
+// LESS: '-R',
+// LC_CTYPE: 'en_US.UTF-8',
+// LSCOLORS: 'Gxfxcxdxbxegedabagacad',
+
+
+// PATH: '/Users/samhagan/.rbenv/shims:/Users/samhagan/.rbenv/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Library/TeX/texbin',
 // function promisify(fun) {
 //   return function(...args) {
 //     return new Promise((resolve, reject) => {

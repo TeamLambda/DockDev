@@ -10,12 +10,12 @@ const ProjectDeploy = ({ deployProject, updateProject, remote, deleteProject }) 
     'Creating containers on remote host',
     'Starting containers',
     'Project is deployed!',
-    '',
+    'Starting update...',
   ];
 
   const btn = remote.machine ?
-    (<button onClick={updateProject}>Update</button>) :
-    (<button onClick={deployProject}>Deploy</button>);
+    (<button className="btn btn-sm btn-primary-outline" onClick={updateProject}>Update</button>) :
+    (<button className="btn btn-sm btn-primary-outline" onClick={deployProject}>Deploy</button>);
   const ipAddress = remote.machine ?
     (<div>Remote IP Address: {remote.ipAddress}</div>) :
     (<div>This project is not deployed!</div>);
@@ -24,12 +24,18 @@ const ProjectDeploy = ({ deployProject, updateProject, remote, deleteProject }) 
     (<div></div>);
 
   return (
-    <div>
-      <div className="alert alert-success" role="alert">
+    <div style={{ marginLeft: '20px', marginTop: '10px' }}>
+      <div>
         {btn}
-        <button onClick={deleteProject}>Delete</button>
+        <button className="btn btn-sm btn-primary-outline" onClick={deleteProject}
+          style={{ marginLeft: '10px' }}
+        >
+          Delete
+        </button>
       </div>
+      <br />
       {ipAddress}
+      <br />
       {notitification}
     </div>
   );

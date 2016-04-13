@@ -53,6 +53,7 @@ import {
   COMPLETED_SERVER_IMAGE_UPDATE,
   COMPLETED_SERVER_CONTAINER_UPDATE,
   ADD_IP,
+  START_DEPLOY_UPDATE,
 } from '../actions';
 
 function config(state = { isFetching: false }, action) {
@@ -147,6 +148,11 @@ function remote(state = {}, action) {
         counter: action.remoteObj.counter,
         oldServer: action.remoteObj.oldServer || '',
       };
+    case START_DEPLOY_UPDATE:
+      return {
+        ...state,
+        status: action.remoteObj.status,
+      };
     default:
       return state;
   }
@@ -211,6 +217,7 @@ function project(state = {}, action) {
     case STARTED_REMOTE_CONTAINERS:
     case COMPLETED_SERVER_IMAGE_UPDATE:
     case COMPLETED_SERVER_CONTAINER_UPDATE:
+    case START_DEPLOY_UPDATE:
       return {
         ...state,
         remote: remote(state.remote, action),
@@ -255,6 +262,7 @@ function projects(state = {}, action) {
     case STARTED_REMOTE_CONTAINERS:
     case COMPLETED_SERVER_IMAGE_UPDATE:
     case COMPLETED_SERVER_CONTAINER_UPDATE:
+    case START_DEPLOY_UPDATE:
       return { ...state,
         [action.remoteObj.cleanName]: project(state[action.remoteObj.cleanName], action),
       };
