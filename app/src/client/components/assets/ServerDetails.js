@@ -28,9 +28,7 @@ const ServerDetailContainer = ({ details, logo, dockdevIP, dbInfo }) => {
               </div>
             <ul className="list-group list-group-flush">
               <li className="list-group-item">
-                <input className="form-control form-control-lg" type="text"
-                  placeholder={ipString}
-                />
+                <input className="form-control form-control-lg" type="text" defaultValue={ipString} />
               </li>
               <li className="list-group-item">
                 <p className="card-text">
