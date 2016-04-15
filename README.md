@@ -24,6 +24,7 @@ Once you have your containers selected, you will be on the project page (see bel
 You can also deploy your project to DigitalOcean and push any updates through the navigation on top of the server box. To deploy a project, simply click deploy and then click update when you are ready to push changes. Before doing this, however, you must first input your DigitalOcean access token into the settings page in the top right of the application.
 
 ![Project Details Screenshot](/screenshots/DockDev-Project-Details.jpg)
+*Beta Screenshot: Projects Page*
 
 ### Thank You
 
