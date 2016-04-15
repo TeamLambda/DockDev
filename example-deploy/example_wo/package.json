@@ -1,0 +1,19 @@
+{
+  "name": "docker_example",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.15.0",
+    "ejs": "^2.4.1",
+    "express": "^4.13.4" 
+  },
+  "devDependencies": {
+    "nodemon": "^1.8.1"
+  }
+}

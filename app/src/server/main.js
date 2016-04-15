@@ -9,11 +9,10 @@ import fileWatch from './projLevel/fileWatch';
 import * as manageProj from './projLevel/manageProj';
 import * as projConfig from './projLevel/projConfig';
 import * as rsync from './projLevel/rsync';
-import * as utils from './utils/utils';
 import * as containerMgmt from './projLevel/containerMgmt';
+import * as utils from './utils/utils';
 
 export {
-  containerMgmt,
   appConfig,
   availableImages,
   defaultConfig,
@@ -25,5 +24,6 @@ export {
   manageProj,
   projConfig,
   rsync,
+  containerMgmt,
   utils,
 };

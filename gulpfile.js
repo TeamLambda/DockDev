@@ -17,14 +17,15 @@ function handleErrors() {
  this.emit('end');
 }
 
-gulp.task('default', ['server', 'react', 'main', 'client-other', 'html', 'bower', 'watch']);
+gulp.task('default', ['server', 'react', 'main', 'css', 'images', 'html', 'bower', 'watch']);
 
 gulp.task('server', () => {
-  return gulp.src('./app/src/server/**/**')
+  return gulp.src('./app/src/server/**/*')
     .pipe(babel( {plugins: [
         'transform-es2015-modules-commonjs',
         'transform-es2015-shorthand-properties',
-        'transform-es2015-parameters'
+        'transform-es2015-parameters',
+        'transform-object-rest-spread'
       ]}
     ))
     .on('error', handleErrors)
@@ -43,17 +44,30 @@ gulp.task('react', () => {
 
   const bundler = browserify({
     entries: ['./app/src/client/index.js'],
-    transform: babelify.configure({presets: ["react", "es2015"]}),
+    transform: babelify.configure({
+      presets: ["react", "es2015"],
+      plugins:["transform-object-rest-spread"],
+    }),
     debug: true,
     fullPaths: true
   })
 
   bundler.external([
+    'electron',
+    'node-uuid',
+    'react-redux',
+    'redux',
+    'redux-thunk',
+    'redux-logger',
+    'react-router-redux',
     'react',
     'react-dom',
     'ramda',
     'react-router',
-    'electron',
+    'moment',
+    'chokidar',
+    'bluebird',
+    'react-tooltip',
     './server/main',
   ]);
 
@@ -64,13 +78,13 @@ gulp.task('react', () => {
     .pipe(gulp.dest('./app/build/client'))
 });
 
-gulp.task('client-other', () => {
-  return gulp.src(['./app/src/client/*/**', '!./app/src/client/index.js', '!./app/src/client/components/**/**.js'])
-    .pipe(gulp.dest('./app/build/client/'))
+gulp.task('css', () => {
+  return gulp.src('./app/src/client/css/**/*')
+    .pipe(gulp.dest('./app/build/client/css'))
 })
 
 gulp.task('images', () => {
-  return gulp.src('./app/src/client/images/*')
+  return gulp.src('./app/src/client/images/**/*')
     .pipe(gulp.dest('./app/build/client/images'))
 })
 
@@ -80,15 +94,16 @@ gulp.task('html', () => {
 })
 
 gulp.task('bower', () => {
-  return gulp.src('./bower_components/*/**')
+  return gulp.src('./bower_components/**/*')
     .pipe(gulp.dest('./app/build/client/bower_components'))
 })
 
 gulp.task('watch', function() {
-  gulp.watch(['./app/src/server/**/**',], ['server']);
+  gulp.watch(['./app/src/server/**/*',], ['server']);
   gulp.watch('./app/src/main.js', ['main']);
-  gulp.watch(['./app/src/client/index.js', 'app/src/client/components/**/**'], ['react']);
-  gulp.watch('./app/src/client/*/**', ['client-other']);
+  gulp.watch(['app/src/client/**/*.js'], ['react']);
+  gulp.watch('./app/src/client/css/**/*', ['css']);
+  gulp.watch('./app/src/client/images/**/*', ['images']);
   gulp.watch('./app/index.html', ['html']);
-  gulp.watch('./bower_components/*/**', ['bower']);
+  gulp.watch('./bower_components/**/*', ['bower']);
 });

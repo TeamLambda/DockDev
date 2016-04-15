@@ -1,8 +1,14 @@
-import * as docker from '../dockerAPI/docker';
 import { coroutine as co } from 'bluebird';
 import defaultConfig from '../appLevel/defaultConfig';
-import * as availableImages from '../appLevel/availableImages';
-import uuidNode from 'node-uuid';
+import { writeContainer } from './projConfig';
+import {
+  containerRemove,
+  imagesList,
+  containerCreate,
+  pullImage,
+  networkCreate,
+  networkDelete,
+} from '../dockerAPI/docker';
 
 /**
  * setServerParams() returns an object with the image, project path, network mode, and working dir
@@ -12,21 +18,18 @@ import uuidNode from 'node-uuid';
  * @param {String} uuid
  * @return {Object} returns an object with the image, project path, network mode, and working dir
  */
-export const setServerParams = (image, uuid, containerName) => ({
+export const setServerParams = (image, cleanName) => ({
   image,
-  containerName,
+  name: `${cleanName}_${image}`,
   HostConfig: {
-    Binds: ['/home/docker/tmp:/app'],
-    NetworkMode: uuid,
-    PortBindings: { '3000/tcp': [{ HostPort: '3000' }] },
-    Dns: [],
-    DnsOptions: [],
-    DnsSearch: [],
+    Binds: [`${defaultConfig.dest}:${defaultConfig.workDir}:ro`],
+    NetworkMode: cleanName,
+    PortBindings: { [`${defaultConfig.port}/tcp`]: [{ HostPort: `${defaultConfig.port}` }] },
   },
-  WorkingDir: '/app',
-  Cmd: ['npm', 'start'],
+  WorkingDir: defaultConfig.workDir,
+  Cmd: defaultConfig.serverCmd,
   ExposedPorts: {
-    '3000/tcp': {},
+    [`${defaultConfig.port}/tcp`]: {},
   },
 });
 
@@ -38,16 +41,25 @@ export const setServerParams = (image, uuid, containerName) => ({
  * @param {String} uuid
  * @return {Object} returns an object with the networkMode
  */
-export const setDbParams = (image, uuid, containerName) => ({
+export const setDbParams = (image, cleanName) => ({
   image,
-  containerName,
+  name: `${cleanName}_${image}`,
   HostConfig: {
-    NetworkMode: uuid,
-    Dns: [],
-    DnsOptions: [],
-    DnsSearch: [],
+    NetworkMode: cleanName,
   },
 });
+
+/**
+ * getContainerConfig() returns the container config object controlling for server or db
+ *
+ * @param {Object} imageObj
+ * @return {Object} returns the docker configuration object to create a container
+ */
+const getContainerConfig = (container) => (
+  container.server ?
+    setServerParams(container.image, container.cleanName) :
+    setDbParams(container.image, container.cleanName)
+);
 
 /**
  * setNetworkParams() returns an object with the project uuid
@@ -56,82 +68,118 @@ export const setDbParams = (image, uuid, containerName) => ({
  * @param {String} uuid
  * @return {Object} returns an object with the uuid
  */
-export const setNetworkParams = (uuid) => ({
-  name: uuid,
+export const setNetworkParams = (cleanName) => ({
+  name: cleanName,
 });
 
 /**
- * add() returns a new container object. It will first attempt to use a local image
- * but if not found it will pull an image from the docker API
- * then it will create a container and return an object with container info
- * based on the passed in uuid, image, and callbacky
+ * createProjectNetwork() creates a new network for the project
  *
- * @param {String} uuid
- * @param {String} image
- * @param {Function} callback
- * @return {Object} newContainer
+ * @param {Object} projObj
+ * @return {Promise} returns true or throws an error if unable to create the network
  */
-export const add = co(function *g(uuid, image, callback, projectName, currContainers) {
-  const server = availableImages.servers.indexOf(image) > -1;
-  const containerName = projectName + image;
-  const containerConfig =
-    server ? setServerParams(image, uuid, containerName) : setDbParams(image, uuid, containerName);
+export const createProjectNetwork = (projObj) =>
+  networkCreate(defaultConfig.machine, setNetworkParams(projObj.cleanName))
+    .then(() => true);
 
-  for (const key in currContainers) {
-    if (currContainers[key].image === containerConfig.image) {
-      return;
-    }
+/**
+ * createRemoteNetwork() creates a new network for the project
+ *
+ * @param {Object} projObj
+ * @return {Promise} returns true or throws an error if unable to create the network
+ */
+export const createRemoteNetwork = (remoteObj) =>
+  networkCreate(remoteObj.machine, setNetworkParams(remoteObj.cleanName))
+    .then(() => true);
+
+/**
+ * deleteProjectNetwork() creates a new network for the project
+ *
+ * @param {Object} projObj
+ * @return {Promise} returns true or throws an error if unable to delete the network
+ */
+export const deleteProjectNetwork = (projObj, ignoreErrors) =>
+  networkDelete(defaultConfig.machine, projObj.cleanName)
+    .then(() => true)
+    .catch(err => {
+      if (!ignoreErrors) throw err;
+    });
+
+/**
+ * containerObj() returns the base container object based on the project and image
+ *
+ * @param {String} cleanName
+ * @param {Object} imageObj
+ * @return {Object} returns a baseline container object
+ */
+export const containerObj = (cleanName, imageObj) => ({
+  cleanName,
+  image: imageObj.name,
+  dockerId: '',
+  name: `${cleanName}_${imageObj.name}`,
+  dest: (imageObj.server ? defaultConfig.dest : ''),
+  server: imageObj.server,
+  status: 'pending',
+  machine: defaultConfig.machine,
+});
+
+/**
+ * createContainer() creates creates a container for the specified project
+ *
+ * @param {Object} projObj
+ * @param {Object} imageObj
+ * @return {Object} returns a container object that is held in store and written to disk
+ */
+export const createContainer = co(function *g(projObj, imageObj) {
+  const container = containerObj(projObj.cleanName, imageObj);
+
+  // if the image is not available on the local machine then tell UI pull it
+  if (!(yield imagesList(defaultConfig.machine, imageObj.name)).length) {
+    container.status = 'pending';
+  } else {
+    // create the container & update the object with the docker generated id
+    const dockCont = yield containerCreate(defaultConfig.machine, getContainerConfig(container));
+    container.dockerId = dockCont.Id;
+    container.status = 'complete';
   }
 
-  let containerId = uuidNode.v4();
+  // write changes to project file
+  yield writeContainer(container, projObj.basePath, 'add');
+  return container;
+});
 
-  callback(uuid, { containerId, image, server, status: 'pending', data: '' });
-
-  // check to make sure image is on the local computer
-  if (!(yield docker.imagesList(defaultConfig.machine, image)).length) {
-    try {
-      yield docker.pullSpawn(defaultConfig.machine, image, uuid, server, containerId, callback);
-    } catch (err) {
-      return callback(uuid, { containerId, image, server, status: 'error', err });
-    }
+/**
+ * pullImageForProject() pulls the specified docker image for when selected for a project
+ *
+ * @param {Object} container
+ * @param {String} path
+ * @return {Object} returns a container object with status updated to (i) complete or (ii) error
+ */
+export const pullImageForProject = co(function *g(container, path) {
+  let newContainer;
+  try {
+    yield pullImage(container.machine, container.image);
+    const dockCont = yield containerCreate(defaultConfig.machine, getContainerConfig(container));
+    newContainer = { ...container, status: 'complete', dockerId: dockCont.Id };
+  } catch (e) {
+    newContainer = { ...container, status: 'error' };
   }
 
-  const tmpContainerId = containerId;
-  containerId = (yield docker.containerCreate(defaultConfig.machine, containerConfig)).Id;
-  const inspectContainer = yield docker.containerInspect(defaultConfig.machine, containerId);
-  const dest = inspectContainer.Mounts[0].Source;
-  const name = inspectContainer.Name.substr(1);
-  const newContainer = {
-    uuid,
-    image,
-    tmpContainerId,
-    containerId,
-    name,
-    dest,
-    server,
-    status: 'complete',
-  };
-
-  callback(uuid, newContainer);
+  yield writeContainer(newContainer, path, 'update');
   return newContainer;
 });
 
 /**
- * removeContainer() returns true after it deletes a container
- * and removes it from the projcet object
- * based on the passed in project object and containerId
+ * deleteProjectContainer() removes the specified container and deletes from project file
  *
- * @param {Object} projObj
- * @param {String} containerId
- * @return {Boolean} true
+ * @param {Object} containerName
+ * @param {String} path
+ * @return {Object} returns true or throws an error
  */
-export const removeContainer = co(function *g(projObj, containerId) {
-  if (projObj.containers[containerId].status === 'complete') {
-    yield docker.containerRemove(projObj.machine, containerId);
+export const deleteProjectContainer = co(function *g(container, path) {
+  if (container.status === 'complete') {
+    yield containerRemove(container.machine, container.dockerId);
   }
-  // if (projObj.containers[containerId].status === 'error' ||
-  //     projObj.containers[containerId].status === 'pending') {
-  //   yield docker.containerRemove(projObj.machine, containerId);
-  // }
+  yield writeContainer(container, path, 'delete');
   return true;
 });

@@ -1,0 +1,23 @@
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Docker Example</title>
+</head>
+<body>
+  <h1>DOCKDEV DEMO SITE -- UPDATED CONTENT</h1>
+  <form method="POST" action='/add'>
+    <input name="msg" type="text" placeholder="add message" autofocus="true"></input>
+    <input type='submit' value="add msg">
+  </form>
+
+  List messages in the database:
+  <ul>
+  <% data.forEach(function(data) { %>
+    <li>
+      <%= data.msg %>
+    </li>
+  <% }) %>
+  </ul>
+
+</body>
+</html>

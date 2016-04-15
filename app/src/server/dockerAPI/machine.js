@@ -1,6 +1,9 @@
 import { coroutine as co } from 'bluebird';
 import R from 'ramda';
-import { readFile, exec as execProm } from '../utils/utils';
+import { readFile, addPath, exec as execProm } from '../utils/utils';
+import { FAILED_TO_ACCESS_MACHINE } from '../appLevel/errorMsgs';
+
+const envVar = addPath({});
 
 /**
  * exec() returns a docker-machine terminal command promise that resolves to the stdout
@@ -9,7 +12,11 @@ import { readFile, exec as execProm } from '../utils/utils';
  * @param {String} args
  * @return {} returns a promise that resolves to the stdout
  */
-const exec = (args) => execProm(`docker-machine ${args}`);
+const exec = (args) => execProm(`docker-machine ${args}`, { env: envVar });
+
+// exec('ls')
+//   .then(console.log)
+//   .catch(console.log);
 
 /**
  * inspect() returns a docker-machine terminal inspect command promise that resolves to the stdout
@@ -18,7 +25,9 @@ const exec = (args) => execProm(`docker-machine ${args}`);
  * @param {String} machineName
  * @return {} returns a promise that resolves to the stdout
  */
-export const inspect = (machineName) => exec(`inspect ${machineName}`);
+export const inspect = (machineName) =>
+  exec(`inspect ${machineName}`)
+    .catch(() => {throw FAILED_TO_ACCESS_MACHINE;});
 
 /**
  * status() returns a string indicating the status of the specified machineName
@@ -48,7 +57,6 @@ export const checkMachineRunning = co(function *g(defaultConfig) {
  */
 export const removeMachine = (machineName) => exec(`rm -f ${machineName}`);
 
-
 /**
  * regenCerts() regenerates the certificates for the machine with force (no stdout output)
  *
@@ -64,6 +72,15 @@ export const regenCerts = (machineName) => exec(`regenerate-certs -f ${machineNa
  * @return {} returns a promise that resolves to the stdout
  */
 export const start = (machineName) => exec(`start ${machineName}`);
+
+/**
+ * restart() restarts the docker machine specified in arguments
+ *
+ * @param {String} machineName
+ * @return {} returns a promise that resolves to the stdout
+ */
+export const restart = (machineName) => exec(`restart ${machineName}`);
+
 
 /**
  * createMachine() executes 'docker-machine create' with an indeterminant number
@@ -95,7 +112,7 @@ export const createVirtualBox = (machineName) =>
  * @return {Object} result
  */
 export const env = co(function *g(machineName) {
-  let result = yield exec(`env ${machineName}`);
+  let result = yield exec(`env --shell sh ${machineName}`);
   result = R.fromPairs(result.split('\n').slice(0, 4).map(val => val.substr(7).split('=')));
   for (const prop in result) {
     if (result.hasOwnProperty(prop)) {
@@ -121,6 +138,7 @@ export const ssh = (machineName, args) => exec(`ssh ${machineName} ${args}`);
  * based on the passed in machine name
  *
  * @param {String} machineName
+ * @param {String} containerInfo
  * @return {Object} configObj
  */
 export const machineConfig = co(function *g(machineName) {
@@ -166,3 +184,7 @@ export const removeMachineFolder = (projObj) =>
  */
 export const createMachineFolder = (projObj) =>
   ssh(projObj.machine, 'mkdir /home/docker/tmp');
+
+// machineConfig('dockdev')
+//   .then(console.log)
+//   .catch(console.log);

@@ -34,10 +34,16 @@ const config = {
   // projects config
   projFolder: '.dockdev',
   projFile: 'dockdev.json',
-  projWriteParams: ['uuid', 'projectName', 'containers', 'machine', 'remoteMachine'],
   projPath() {
     return join(this.projFolder, this.projFile);
   },
+
+  // container config
+  dest: '/home/docker',
+  workDir: '/app',
+  port: 3000,
+  serverCmd: ['npm', 'start'],
+  remoteDest: '/root',
 };
 
 export default config;

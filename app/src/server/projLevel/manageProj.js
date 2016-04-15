@@ -1,27 +1,8 @@
 import * as container from '../dockerAPI/docker';
-import fileWatch from './fileWatch';
+import fileWatch from '../projLevel/fileWatch';
 import { coroutine as co } from 'bluebird';
 import { removeMachineFolder, createMachineFolder } from '../dockerAPI/machine';
 import errorHandler from '../appLevel/errorHandler';
-
-/**
-* contIssues() stops the functions if there is a container that is pending or error status
-* based on the passed in project object
-*
-* @param {object} projObj
-* @return {object} projObj
-*/
-function contIssues(projObj) {
-  for (var key in projObj.containers) {
-    console.log(projObj.containers[key].status);
-    if (projObj.containers[key].status === 'error' ||
-        projObj.containers[key].status === 'pending') {
-      projObj.false = true;
-      return projObj;
-    }
-  }
-  return true;
-}
 
 /**
 * checkStatus() accepts a machine name and container id and returns the status
@@ -34,9 +15,10 @@ function contIssues(projObj) {
 * @param {String} containerId
 * @return {Number}
 */
+
 const checkStatus = co(function *g(machineName, containerId, errorCallback) {
   try {
-    const inspectResults = yield container.containerInspect(machineName, containerId);
+    const inspectResults = yield container.inspect(machineName, containerId);
     return inspectResults.State.Running ? 1 : 0;
   } catch (e) {
     const error = yield errorHandler('checkStatus', e, arguments, errorCallback);
@@ -53,8 +35,6 @@ function getServer(projObj) {
 }
 
 export const stopProject = co(function *g(projObj, errorCallback) {
-  const checkCont = contIssues(projObj);
-  if (checkCont.false) return checkCont;
   const containersArray = Object.keys(projObj.containers);
 
   for (let i = 0; i < containersArray.length; i++) {
@@ -75,7 +55,7 @@ export const stopProject = co(function *g(projObj, errorCallback) {
       }
       case 1: {
         try {
-          container.containerStop(projObj.machine, containerId);
+          container.stop(projObj.machine, containerId);
         } catch (e) {
           yield errorHandler('stopProject', e, arguments, errorCallback);
           const error = {
@@ -98,8 +78,6 @@ export const stopProject = co(function *g(projObj, errorCallback) {
 });
 
 export const startProject = co(function *g(projObj, activeProject, errorCallback) {
-  const checkCont = contIssues(projObj);
-  if (checkCont.false) return checkCont;
   const server = getServer(projObj);
   try {
     yield removeMachineFolder(projObj);
@@ -158,7 +136,7 @@ export const startProject = co(function *g(projObj, activeProject, errorCallback
       }
       case 0: {
         try {
-          container.containerStart(projObj.machine, containerId);
+          container.start(projObj.machine, containerId);
         } catch (e) {
           yield errorHandler('startProject', e, arguments, errorCallback);
           const error = {
@@ -190,9 +168,6 @@ export const restartProject = co(function *g(projObj, activeProject, errorCallba
 
 export const removeProject = co(function *g(projObj, errorCallback) {
   // remove the containers
-  const checkCont = contIssues(projObj);
-  if (checkCont.false) return checkCont;
-
   const containersArray = Object.keys(projObj.containers);
   for (let i = 0; i < containersArray.length; i++) {
     const containerId = containersArray[i];
@@ -212,7 +187,7 @@ export const removeProject = co(function *g(projObj, errorCallback) {
       }
       default: {
         try {
-          container.containerRemove(projObj.machine, containerId);
+          container.remove(projObj.machine, containerId);
         } catch (e) {
           yield errorHandler('removeProject', e, arguments, errorCallback);
           const error = {

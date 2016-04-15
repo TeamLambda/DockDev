@@ -3,13 +3,10 @@ import moment from 'moment';
 import * as utils from '../utils/utils';
 import defaultConfig from '../appLevel/defaultConfig';
 
-
 function ErrorMessage(from, error, args) {
   this.time = moment().format('MM-D-YYYY, h:mm:ss a');
   this.from = from;
-  this.message = error.statusCode ? error.message : error.toString().substr(7);
-  this.type = error.statusCode ? 'request' : 'command';
-  this.code = error.statusCode ? error.statusCode : error.code;
+  this.message = error;
   this.args = args;
 }
 
@@ -22,7 +19,7 @@ function ErrorMessage(from, error, args) {
 * @param {Function} clientCallback
 * @return {String} complete
 */
-const errorHandler = co(function *g(from, error, args, clientCallback) {
+const errorHandler = co(function *g(from, error, args) {
   // read existing error log if it exists
   let errorLog;
   try {
@@ -35,10 +32,6 @@ const errorHandler = co(function *g(from, error, args, clientCallback) {
   const errorObj = new ErrorMessage(from, error, args);
   errorLog.push(errorObj);
   yield utils.writeFile(defaultConfig.errorLogPath(), utils.jsonStringifyPretty(errorLog));
-
-  if (typeof clientCallback === 'function') {
-    clientCallback(errorObj);
-  }
 
   return errorObj;
 });

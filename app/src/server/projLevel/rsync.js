@@ -1,7 +1,7 @@
-import { coroutine as co } from 'bluebird';
 import R from 'ramda';
-import * as machine from '../dockerAPI/machine.js';
-import { exec } from '../utils/utils';
+import { exec, addPath } from '../utils/utils';
+
+const env = addPath({});
 
 /**
 * cleanFilePath() accepts a string file path and returns a string file path with any
@@ -10,7 +10,7 @@ import { exec } from '../utils/utils';
 * @param {String} basePath
 * @return {String} basePath
 */
-function cleanFilePath(basePath) {
+export function cleanFilePath(basePath) {
   const splitPath = basePath.split('/');
   const cleanPath = splitPath.map(val => {
     if (val.indexOf(' ') > -1) return `"${val}"`;
@@ -27,7 +27,7 @@ function cleanFilePath(basePath) {
  * @param {String} args
  * @return {} returns a promise that resolves to the stdout
  */
-const rsync = (args) => exec(`rsync ${args}`);
+export const rsync = (args) => exec(`rsync ${args}`, { env });
 
 /**
  * selectWithin() returns a result object
@@ -55,7 +55,7 @@ const selectWithin = R.curry((array, key, obj) => {
  * @param {Object} docker-machine inspect object (passed in below)
  * @return {Object} result (from selectWithin)
  */
-const selectSSHandIP = R.compose(
+export const selectSSHandIP = R.compose(
   selectWithin(['SSHKeyPath', 'IPAddress'], 'Driver'),
   JSON.parse
 );
@@ -69,50 +69,39 @@ const selectSSHandIP = R.compose(
  * @param {String} machineInfo
  * @return {String}
  */
-const createRsyncArgs = (source, dest, machineInfo) =>
-  `-aWOl --inplace --rsh="ssh -i ${machineInfo.SSHKeyPath} -o IdentitiesOnly=yes -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" --delete ${source} docker@${machineInfo.IPAddress}:${dest}`;
+export const createRsyncArgs = (source, dest, machineInfo) =>
+  `-aWOl --inplace --rsh="ssh -i ${machineInfo.SSHKeyPath} ` +
+  '-o IdentitiesOnly=yes -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" ' +
+  `--delete ${source} docker@${machineInfo.IPAddress}:${dest}`;
 
 /**
- * getSyncContainer() returns the containerId for the container where sync is turned on
- * based on the passed in project object
+ * createRemoteRsyncArgs() returns the string of arguments for rsync to run
+ * based on the passed in source, destination, and machine information
  *
- * @param {Object} projObj
- * @return {String} result
+ * @param {String} source
+ * @param {String} dest
+ * @param {String} machineInfo
+ * @return {String}
  */
-function getSyncContainer(projObj) {
-  let result;
-  for (const container in projObj.containers) {
-    if (projObj.containers[container].server) {
-      result = projObj.containers[container].containerId;
-      break;
-    }
-  }
-  return result;
-}
+export const createRemoteRsyncArgs = (source, dest, machineInfo, local = false) =>
+  `-aWOl --inplace --rsh="ssh -i ${machineInfo.SSHKeyPath} ` +
+  '-o IdentitiesOnly=yes -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" ' +
+  '--exclude=node_modules ' +
+  `--delete ${source} ${local ? 'docker' : 'root'}@${machineInfo.IPAddress}:${dest}`;
 
 /**
- * generateRsync() returns a promise to run the rsync terminal command
- * initially, it calls a helper function which gathers the arguments for rsync
- * it then runs the rsync terminal command with the given arguments
- * based on the passed in project object
+ * ThrottleSync() ensures that the rsync function will run by
+ * perventing multiple calls to rsync which will crash the app
  *
- * @param {Object} projObj
- * @return {} returns a promise to run the rsync terminal command
+ * @param {Function} func
+ * @param {Number} delay
+ * @return {Object} new ThrottleSync()
  */
-export function generateRsync(projObj, destMachine) {
-  const getArgs = co(function *g() {
-    const machineInfo = selectSSHandIP(yield machine.inspect(projObj[destMachine]));
-    const targetContainerId = getSyncContainer(projObj);
-    const dest = (destMachine === 'remoteMachine') ?
-      '/var/lib/docker/tmp' : projObj.containers[targetContainerId].dest;
-    const cleanPath = cleanFilePath(projObj.basePath);
-
-    return createRsyncArgs(`${cleanPath}/`, dest, machineInfo);
-  });
-
-  const args = getArgs();
-
-  return co(function *g() {
-    return yield rsync(yield args);
-  });
+export function ThrottleSync(func, delay) {
+  this.func = func;
+  this.delay = delay;
+  this.start = function() {
+    if (this.last) clearTimeout(this.last);
+    this.last = setTimeout(this.func.bind(this), this.delay);
+  };
 }
